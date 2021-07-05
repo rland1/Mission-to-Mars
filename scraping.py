@@ -19,7 +19,8 @@ def scrape_all():
         "news_paragraph": news_paragraph,
         "featured_image": featured_image(browser),
         "facts": mars_facts(),
-        "last_modified": dt.datetime.now()
+        "last_modified": dt.datetime.now(),
+        "hemisphere_image_info": hemisphere_image(browser)
     }
 
     # Stop webdriver and return data
@@ -96,6 +97,53 @@ def mars_facts():
 
     # Convert dataframe into HTML format, add bootstrap
     return df.to_html(classes="table table-striped")
+
+def hemisphere_image(browser):
+        
+    # 1. Use browser to visit the URL 
+    url = 'https://astrogeology.usgs.gov/search/results?q=hemisphere+enhanced&k1=target&v1=Mars'
+
+    browser.visit(url)
+
+    # 2. Create a list to hold the images and titles.
+    hemisphere_image_urls = []
+
+    # 3. Write code to retrieve the image urls and titles for each hemisphere.
+    # Parse the html with soup
+    html = browser.html
+    url_soup = soup(html, 'html.parser')
+
+    # Find the number of pictures to scan
+    pictures = len(url_soup.select("div.item"))
+
+    # for loop over the link of each sample picture
+    for i in range(pictures):
+        # Create an empty dictionary to hold the search results
+        hemispheres = {}
+        # Find link to picture and open it
+        link_image = url_soup.select("div.description a")[i].get('href')
+        browser.visit(f'https://astrogeology.usgs.gov{link_image}')
+        
+        # Parse the new html page with soup
+        html = browser.html
+        sample_image_soup = soup(html, 'html.parser')
+        # Get the link
+        img_url = sample_image_soup.select_one("div.downloads ul li a").get('href')
+        # Get the title
+        title = sample_image_soup.select_one("h2.title").get_text()
+        # Add extracts to the results dict
+        results = {
+            'img_url': img_url,
+            'title': title}
+        
+        # Append results dict to hemisphere image urls list
+        hemisphere_image_urls.append(results)
+        
+        # Return to main page
+        browser.back()
+
+
+        return hemisphere_image_urls    
 
 if __name__ == "__main__":
 
